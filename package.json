@@ -1,0 +1,27 @@
+{
+  "name": "employeeTracker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/diaseu/employeeTracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/diaseu/employeeTracker/issues"
+  },
+  "homepage": "https://github.com/diaseu/employeeTracker#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "inquirer": "^8.1.0",
+    "mysql2": "^2.2.5",
+    "path": "^0.12.7"
+  }
+}
