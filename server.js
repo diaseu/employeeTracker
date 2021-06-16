@@ -17,7 +17,7 @@ const start = () => {
     type: 'list',
     name: 'action',
     message: 'What would you like to do?',
-    choices: ['View all departments', 'View all roles', 'View all employees', 'Add a department', 'Add a role', 'Add an employee', 'Edit an employee', 'Remove an employee', 'Exit']
+    choices: ['View all departments', 'View all roles', 'View all employees', 'Add a department', 'Add a role', 'Add an employee', 'Edit an employee', 'Exit']
   })
     .then(({ action }) => {
       switch (action) {
@@ -42,9 +42,9 @@ const start = () => {
         case 'Edit an employee':
           editEmployee();
           break;
-        case 'Remove an employee':
-          deleteEmployee();
-          break;
+        // case 'Remove an employee':
+        //   deleteEmployee();
+        //   break;
         case 'Exit':
           process.exit()
       }
@@ -135,7 +135,6 @@ const findDept = () => {
 const addRole = () => {
   findDept()
     .then(function (id) {
-      console.log(JSON.stringify(id))
       let callDept = id.map(department => ({name: department.name, value: department.id}) )
       inquirer
         .prompt([
@@ -162,7 +161,6 @@ const addRole = () => {
             salary: dataR.salary,
             department_id: dataR.department_id
           }
-          console.log(`department_id: ${dataR.department_id}`)
           console.log(`New Department Added! - ${dataR.title} role in ${dataR.department_id} department (Salary $${dataR.salary})`)
           db.query('INSERT INTO role SET ?', newRole, err => {
             if (err) { console.log(err) }
@@ -315,9 +313,10 @@ const editEmployee = () => {
                       }
                     ])
                     .then(dataNew => {
-                      console.log('Manager changed for employee!'')
+                      console.log('Manager changed for employee!')
                       db.query(`UPDATE employee SET employee.manager_id='${dataNew.newManager}' WHERE employee.id='${dataE.employee}'`, dataE, err => {
                         if (err) { console.log(err) }
+                        whatNow();
                       })
                     })
                     .catch(err => console.log(err))
@@ -330,12 +329,12 @@ const editEmployee = () => {
   })
 };
 
-const deleteEmployee = () => {
-  inquirer 
-    .prompt()
-    .then()
-    .catch(err => console.log(err))
-}
+// const deleteEmployee = () => {
+//   inquirer 
+//     .prompt()
+//     .then()
+//     .catch(err => console.log(err))
+// }
 
 
 
