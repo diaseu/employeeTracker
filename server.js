@@ -1,99 +1,106 @@
-const inquirer = require('inquirer')
-const mysql = require('mysql2')
-const express = require('express')
-const { join } = require('path')
-const app = express()
-// require('console.table')
+const inquirer = require('inquirer');
+const mysql = require('mysql2');
+const express = require('express');
+const app = express();
+const cTable = require('console.table');
+// const Connection = require('mysql2/typings/mysql/lib/Connection');
 
-app.use(express.static(join(__dirname, 'public')))
-app.use(express.urlencoded({ extended: true }))
-app.use(express.json())
-
-app.use(require('./routes'))
-
-
-// const Games = require('./games.js')
-
-let addNew = []
+let db = mysql.createConnection('mysql://root:rootroot@localhost:8809/employees_db');
+db.connect(function(err) { 
+  if (err) throw err;
+  start();
+})
 
 const start = () => {
   inquirer
-    .prompt([
-      {
-        type: "list",
-        name: "action",
-        choices: ["View Departments", "Add", "Update", "Delete"],
-        message: "What action to take:"
-      },
-      {
-        type: "list",
-        name: "db",
-        choices: ["department", "role", "employee"],
-        message: "Choose a database table:"
-      },
-    ])
-    .then(ans => {
-      switch (ans.action) {
-        case "View":
-          viewDB()
-            })
-        break
-        case "Add":
-          switch (ans.db) {
-            case "department":
-              addDepartment()
-              break
-            case "role":
-              addRole()
-              break
-            case "employee":
-              addEmployee()
-              break
-            default:
-              break
-          }
-          break
-        case "Update":
-          break
-        case "Delete":
-          break
-        default:
-          break;
-                }
-              })
-          }
-start()
-
-// async function getDB = () => {
-//   const response = await new Promise((resolve, reject) => {
-//     db.query(`SELECT * FROM ${ans.db}`, (err, view) => {
-//       if (err) { console.log(err) }
-//       resolve(view)
-//     })
-//   })
-//   return response
-// }
-
-let table = ans.db
-
-async function getDB (table) {
-  const response = await new Promise((resolve, reject) => {
-    db.query(`SELECT * FROM ${table}`, (err, view) => {
-      if (err) { console.log(err) }
-      resolve(view)
-    })
+  .prompt({
+    type: 'list',
+    name: 'action',
+    message: 'What would you like to do?',
+    choices: ['View all departments', 'View all roles', 'View all employees', 'Add a department', 'Add a role', 'Add an employee', 'Edit an employee', 'Remove an employee', 'Exit']
   })
-  return response
-}
-
-const viewDB = () => {
-  getDB()
-    .then(view => {
-      console.table(view)
-      whatNow()
+    .then(({ action }) => {
+      switch (action) {
+        case 'View all departments':
+          viewDepartments();
+          break;
+        case 'View all roles':
+          viewRoles();
+          break;
+        case 'View all employees':
+          viewEmployees();
+          break;
+        case 'Add a department':
+          addDepartment();
+          break;
+        case 'Add a role':
+          addRole();
+          break;
+        case 'Add an employee':
+          addEmployee();
+          break;
+        case 'Edit an employee':
+          editEmployee();
+          break;
+        case 'Remove an employee':
+          deleteEmployee();
+          break;
+        case 'Exit':
+          process.exit()
+      }
     })
     .catch(err => console.log(err))
 }
+
+const viewDepartments = () => {
+  db.query(`SELECT department.name AS Departments FROM department`, (err, view) => {
+    if (err) { console.log(err) }
+    console.table(view);
+    whatNow();
+  })
+}
+
+const viewRoles = () => {
+    db.query(`SELECT role.title, role.salary, department.name
+    AS department FROM role LEFT JOIN department ON role.department_id = department.id`, (err, view) => {
+    if (err) { console.log(err) }
+    console.table(view);
+      whatNow();
+  })
+}
+
+const viewEmployees = () => {
+  db.query(`SELECT employee.id, employee.first_name AS First_Name, employee.last_name AS Last_Name, role.title AS role FROM employee LEFT JOIN role ON employee.role_id = role.id`, (err, view) => {
+    if (err) { console.log(err) }
+    console.table(view)
+    whatNow();
+  })
+}
+
+// const viewManagers = () => {
+//   return db.promise().query(`SELECT employee.id, employee.first_name AS First_Name, employee.last_name AS Last_Name, role.title AS role FROM employee LEFT JOIN role ON employee.role_id = role.id WHERE role.title LIKE '%Manager%' OR role.title LIKE '%manager%'`)
+// }
+
+const whatNow = () => {
+  inquirer
+    .prompt([
+      {
+        type: 'list',
+        name: 'nowWhat',
+        choices: ["Continue", "Exit"],
+        message: "What Now?"
+      }
+    ])
+    .then(dataNow => {
+      switch (dataNow.nowWhat) {
+        case "Continue":
+          start()
+          break
+        case "Exit":
+          process.exit()
+      }
+    })
+};
 
 const addDepartment = () => {
   inquirer
@@ -111,174 +118,225 @@ const addDepartment = () => {
       console.log(`New Department Added! - ${dataD.name}`)
       db.query('INSERT INTO department SET ?', newDepartment, err => {
         if (err) { console.log(err) }
-        whatNow()
+        whatNow();
       })
     })
+};
+
+const findDept = () => {
+  return new Promise((resolve, reject) => {
+    db.query("SELECT id, name FROM department", function (err, data) {
+      if (err) { console.log(err) }
+      resolve(data);
+    })
+  })
 }
 
 const addRole = () => {
-  inquirer
-    .prompt([
-      {
-        type: 'input',
-        name: 'title',
-        message: "Title of role:"
-      },
-      {
-        type: 'number',
-        name: 'salary',
-        message: "Salary of role:"
-      },
-      {
-        type: 'list',
-        name: 'department_id',
-        message: "What department does this role belong to:",
-        choices: []
-      }
-    ])
-    .then(dataR => {
-      let newRole = {
-        name: dataR.title,
-        salary: dataR.salary,
-        department_id: dataR.department_id
-      }
-      console.log(`New Role Added! - ${dataR.title} ($${dataR.salary}) in ${dataR.department_id} department`)
-      db.query('INSERT INTO role SET ?', newRole, err => {
-        if (err) { console.log(err) }
-        whatNow()
+  findDept()
+    .then(function (id) {
+      console.log(JSON.stringify(id))
+      let callDept = id.map(department => ({name: department.name, value: department.id}) )
+      inquirer
+        .prompt([
+          {
+            type: 'input',
+            name: 'title',
+            message: "Title of Role:"
+          },
+          {
+            type: 'number',
+            name: 'salary',
+            message: "Salary of Role:"
+          },
+          {
+            type: 'list',
+            name: 'department_id',
+            message: "What department?",
+            choices: callDept
+          }
+        ])
+        .then(dataR => {
+          let newRole = {
+            title: dataR.title,
+            salary: dataR.salary,
+            department_id: dataR.department_id
+          }
+          console.log(`department_id: ${dataR.department_id}`)
+          console.log(`New Department Added! - ${dataR.title} role in ${dataR.department_id} department (Salary $${dataR.salary})`)
+          db.query('INSERT INTO role SET ?', newRole, err => {
+            if (err) { console.log(err) }
+            whatNow();
+        })
       })
+      .catch(err => console.log(err))
     })
+  .catch(err => console.log(err))
+};
+
+const findRole = () => {
+  return new Promise((resolve, reject) => {
+    db.query("SELECT id AS value, title AS name FROM role", function (err, data) {
+      if (err) { console.log(err) }
+      resolve(data);
+    })
+  })
+}
+
+const findManagers = () => {
+  return new Promise((resolve, reject) => {
+    db.query(`SELECT employee.id AS value, CONCAT (employee.first_name, " ", employee.last_name, " - ", role.title) AS name FROM employee LEFT JOIN role ON employee.role_id = role.id WHERE role.title LIKE '%Manager%' OR role.title LIKE '%manager%'`, function (err, data) {
+      if (err) { console.log(err) }
+      resolve(data);
+    })
+  })
 }
 
 const addEmployee = () => {
-  inquirer
-    .prompt([
-      {
-        type: 'input',
-        name: 'first_name',
-        message: "First name of employee:"
-      },
-      {
-        type: 'input',
-        name: 'last_name',
-        message: "Last name of employee:"
-      },
-      {
-        type: 'list',
-        name: 'role_id',
-        message: "Role of employee:"
-      },
-      {
-        type: 'list',
-        name: 'manager_id',
-        message: "Manager of employee:"
-      }
-    ])
-    .then(dataE => {
-      let newFood = {
-        first_name: dataE.first_name,
-        origin: dataE.origin,
-        glutenFree: dataE.glutenFree
-      }
-      console.log(`New Food Added! - ${dataE.name} (${dataE.origin})`)
-      db.query('INSERT INTO foods SET ?', newFood, err => {
-        if (err) { console.log(err) }
-        whatNow()
-      })
+  findRole()
+    .then(function (callRole) {
+      findManagers()
+        .then(function (callManagers) {
+          inquirer
+          .prompt([
+            {
+              type: 'input',
+              name: 'first_name',
+              message: 'First Name of employee:'
+            },
+            {
+              type: 'input',
+              name: 'last_name',
+              message: 'Last Name of employee:'
+            },
+            {
+              type: 'list',
+              name: 'role_id',
+              message: 'Role of employee:',
+              choices: callRole
+            },
+            {
+              type: 'list',
+              name: 'manager_id',
+              message: 'Manager of employee:',
+              choices: callManagers
+            }
+          ])
+          .then(dataE => {
+            console.log(`New Employee Added! - ${callRole.find(r => r.value == dataE.role_id).name} ${dataE.first_name} ${dataE.last_name} (Managed by ${callManagers.find(m => m.value == dataE.manager_id).name.split(' - ')[0]})`)
+            db.query('INSERT INTO employee SET ?', dataE, err => {
+              if (err) { console.log(err) }
+              whatNow();
+            })
+          })
+          .catch(err => console.log(err))
+        })
     })
 }
 
-const addMusic = () => {
-  inquirer
-    .prompt([
-      {
-        type: 'input',
-        name: 'title',
-        message: "Title of song:"
-      },
-      {
-        type: 'input',
-        name: 'artist',
-        message: "Artist:"
-      },
-      {
-        type: 'album',
-        name: 'album',
-        message: "Album:"
-      }
-    ])
-    .then(dataS => {
-      let newSong = {
-        title: dataS.title,
-        artist: dataS.artist,
-        album: dataS.album
-      }
-      console.log(`New Song Added!\n "${dataS.title}" by ${dataS.artist} from the ${dataS.album} album`)
-      db.query('INSERT INTO music SET ?', newSong, err => {
-        if (err) { console.log(err) }
-        whatNow()
-      })
+// if you choose Edit Employee
+// first, choose an employee 
+// then, choose whether you want to update role or update manager
+// finally, nowWhat
+
+const findEmployees = () => {
+  return new Promise((resolve, reject) => {
+    db.query(`SELECT employee.id AS value, CONCAT (employee.first_name, " ", employee.last_name, " - ", role.title) AS name FROM employee LEFT JOIN role ON employee.role_id = role.id`, function (err, data) {
+      if (err) { console.log(err) }
+      resolve(data);
     })
+  })
 }
 
-const whatNow = () => {
-  inquirer
-    .prompt([
-      {
-        type: 'list',
-        name: 'nowWhat',
-        choices: ["Add another", "Main Menu", "Exit"],
-        message: "What Now?"
-      }
-    ])
-    .then(dataNow => {
-      switch (dataNow.nowWhat) {
-        case "Add another":
-          addWhat()
-          break
-        case "Main Menu":
-          start()
-          break
-        case "Exit":
-          process.exit()
-      }
+const updateRole = () => {
+  return new Promise((resolve, reject) => {
+    db.query(`UPDATE employee SET ? AS name FROM employee LEFT JOIN role ON employee.role_id = role.id`, function (err, data) {
+      if (err) { console.log(err) }
+      resolve(data);
     })
+  })
 }
 
-const addWhat = () => {
-  inquirer
-    .prompt([
-      {
-        type: 'list',
-        name: 'addWhat',
-        choices: ['Add another Game', 'Add another Movie', 'Add another Food', 'Add another Song'],
-        message: 'What would you like to add another?'
-      }
-    ])
-    .then(dataAW => {
-      switch (dataAW.addWhat) {
-        case "Add another Game":
-          addGames()
-          break
-        case "Add another Movie":
-          addMovie()
-          break
-        case "Add another Food":
-          addFood()
-          break
-        case "Add another Song":
-          addMusic()
-          break
-        default:
-          start()
-      }
-    })
+const editEmployee = () => {
+  findEmployees()
+    .then(function (callEmployees) {
+      inquirer
+        .prompt([
+          {
+            type: 'list',
+            name: 'employee',
+            message: 'Which employee do you want to edit:',
+            choices: callEmployees
+          },
+          {
+            type: 'list',
+            name: 'action',
+            message: 'What do you want to do?',
+            choices: ['Change Role', 'Change Manager']
+          }
+        ])
+        .then(dataE => {
+          console.log(dataE)
+          switch (dataE.action) {
+            case 'Change Role':
+              findRole()
+                .then(function (callRole) {
+                  inquirer
+                    .prompt([
+                      {
+                        type: 'list',
+                        name: 'newRole',
+                        message: 'What new role do you want to give them?',
+                        choices: callRole
+                      }
+                    ])
+                    .then(dataNew => {
+                      // console.log(dataE.employee)
+                      console.log(`Employee Role Updated! ${dataE.employee}`)
+                      db.query(`UPDATE employee SET employee.role_id='${dataNew.newRole}' WHERE employee.id='${dataE.employee}'`, dataE, err => {
+                        if (err) { console.log(err) }
+                        whatNow();
+                      })
+                    })
+                    .catch(err => console.log(err))
+                  })
+                .catch(err => console.log(err))
+              break;
+            case 'Change Manager':
+              findManagers()
+                .then(function (callManagers) {
+                  inquirer
+                    .prompt([
+                      {
+                        type: 'list',
+                        name: 'newManager',
+                        message: 'Which new manager do you want to give them?',
+                        choices: callManagers
+                      }
+                    ])
+                    .then(dataNew => {
+                      console.log('Manager changed for employee!'')
+                      db.query(`UPDATE employee SET employee.manager_id='${dataNew.newManager}' WHERE employee.id='${dataE.employee}'`, dataE, err => {
+                        if (err) { console.log(err) }
+                      })
+                    })
+                    .catch(err => console.log(err))
+                })
+                .catch(err => console.log(err))
+              break;
+          }
+        })
+        .catch(err => console.log(err))
+  })
+};
+
+const deleteEmployee = () => {
+  inquirer 
+    .prompt()
+    .then()
+    .catch(err => console.log(err))
 }
 
 
 
-
-
-
-
-app.listen(process.env.PORT || 3000)
+app.listen(3000);

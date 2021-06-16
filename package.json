@@ -19,9 +19,11 @@
   },
   "homepage": "https://github.com/diaseu/employeeTracker#readme",
   "dependencies": {
+    "console.table": "^0.10.0",
     "express": "^4.17.1",
     "inquirer": "^8.1.0",
     "mysql2": "^2.2.5",
     "path": "^0.12.7"
-  }
+  },
+  "devDependencies": {}
 }
