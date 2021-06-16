@@ -10,9 +10,7 @@
 - [Installation](#installation)
 - [Usage](#usage)
 - [License](#license)
-- [Contributing](#contributing)
-- [Tests](#tests)
-- [Questions](#questions)
+- [Credits](#credits)
 
 ---
 
@@ -23,15 +21,10 @@ Download the application and install all dependencies with the command `npm inst
 ## Usage
 
 Run `server.js` in command line with >`node app.js` to start the application. Scroll through the options to select from the available options. Options include:
+- View department, role, employee
+- Add department, role, employee
+- Edit employee's role, Edit employee's manager
 
-## Contributing
+## Credits
 
 npm packages include: `inquirer`, `mysql2`, `console.table`
-
-## Tests
-
-None
-
-## Questions
-
-None
